@@ -1,0 +1,91 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:  # 支持手动触发
+  push:
+    tags:
+      - "v*"  # 推送 tag（如 v1.0.0）时自动构建并发布
+
+jobs:
+  build:
+    name: Build LogViewer (Windows)
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. 检出代码 ────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. 安装 Go ────────────────────────────────────────────────
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      # ── 3. 安装 Wails CLI ─────────────────────────────────────────
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      # ── 4. 安装 WebView2（Wails Windows 运行时依赖） ──────────────
+      - name: Install WebView2 Bootstrap (if missing)
+        shell: pwsh
+        run: |
+          $installer = "$env:TEMP\MicrosoftEdgeWebView2Setup.exe"
+          if (-not (Test-Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}")) {
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $installer
+            Start-Process -FilePath $installer -Args "/silent /install" -Wait
+          } else {
+            Write-Host "WebView2 already installed, skipping."
+          }
+
+      # ── 5. 构建 ───────────────────────────────────────────────────
+      - name: Build
+        run: wails build -platform windows/amd64 -nsis=false
+
+      # ── 6. 上传构建产物 ───────────────────────────────────────────
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LogViewer-windows-amd64
+          path: build/bin/LogViewer.exe
+          retention-days: 7
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')  # 仅在推送 tag 时发布
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: LogViewer-windows-amd64
+          path: dist
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "LogViewer v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## TEngine LogViewer v${{ steps.version.outputs.VERSION }}
+
+            Windows 桌面日志查看工具，用于解析并可视化 TEngine Unity 运行时日志。
+
+            ### 安装
+            下载 `LogViewer.exe` 直接运行，无需安装。
+
+            ### 更新内容
+            <!-- 在推送 tag 前更新此处的版本说明 -->
+
+            ---
+            完整源码和历史：[TEngine 主仓库](https://github.com/RSJWY/TEngine/tree/main/Tools/LogViewer)
+          files: dist/LogViewer.exe
+          draft: false
+          prerelease: false

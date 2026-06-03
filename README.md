@@ -1,5 +1,13 @@
 # TEngine Log Viewer
 
+> **📦 独立仓库** — 本项目从 [TEngine](https://github.com/RSJWY/TEngine) 主仓库的 `Tools/LogViewer` 目录拆分而来，使用 Git Subtree 保持同步。
+> 
+> - **贡献代码/反馈问题**：请在 [TEngine 主仓库](https://github.com/RSJWY/TEngine) 提交 PR/Issue（路径 `Tools/LogViewer/`）
+> - **下载可执行文件**：前往本仓库 [Releases](https://github.com/RSJWY/TEngine-LogView/releases)
+> - **查看完整历史**：[TEngine 主仓库提交记录](https://github.com/RSJWY/TEngine/commits/main/Tools/LogViewer)
+
+---
+
 TEngine Unity 日志查看工具。把 `UnityLoggerBridge` 落盘的 `.log` 文件以图形界面展示，支持级别筛选、关键词检索、堆栈折叠。
 
 基于 Go + [Wails v2](https://wails.io) 构建，编译为单体 exe，无需运行时依赖（Windows 10/11 自带 WebView2）。
@@ -92,3 +100,13 @@ LogViewer/
 ├── build.bat / build.sh # 一键构建脚本
 └── go.mod
 ```
+
+## 技术栈
+
+- **后端**：Go 1.26 + Wails v2.12
+- **前端**：原生 HTML/CSS/JavaScript（无框架依赖）
+- **构建**：GitHub Actions 自动化发布
+
+## 许可证
+
+跟随主仓库 [TEngine](https://github.com/RSJWY/TEngine) 许可证。
