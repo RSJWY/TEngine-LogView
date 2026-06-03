@@ -6,6 +6,10 @@ on:
     tags:
       - "v*"  # 推送 tag（如 v1.0.0）时自动构建并发布
 
+# 授予工作流创建 Release（写入仓库内容）的权限
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build LogViewer (Windows)
